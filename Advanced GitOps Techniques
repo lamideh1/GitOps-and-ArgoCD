@@ -1,0 +1,15 @@
+Here’s a step-by-step guide (Steps A–E) to help you solve and complete the **“Advanced GitOps Techniques”** mini project using ArgoCD:
+
+---
+
+### **A. Setup Multi-Cluster Environment**
+
+1. **Provision Two or More Kubernetes Clusters:**
+
+   * **Option 1 (Production-like):** Use AWS EKS to provision multiple clusters.
+   * **Option 2 (Local Dev):** Use `minikube` or `kind` to create multiple clusters locally.
+   * Verify access to all clusters:
+
+     ```bash
+     kubectl config get-context
+     ```
