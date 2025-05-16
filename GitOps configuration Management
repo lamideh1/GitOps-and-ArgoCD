@@ -1,0 +1,242 @@
+Here’s a **step-by-step breakdown** of the **Mini Project: GitOps Configuration Management** from **Module 3: Advanced Configuration Management in ArgoCD**. This guide will walk you through everything you need to do, where to go, and what to submit.
+
+---
+
+## **PROJECT OBJECTIVE**
+
+To implement advanced configuration management using **Helm** and **Kustomize**, integrate secure **Secrets Management**, and fine-tune **Resource Customization** and **Sync Policies** in **ArgoCD**.
+
+---
+
+## **STEP 1: Setup Helm Configuration in ArgoCD**
+
+### 1.1 Create a Helm Chart
+
+**Structure:**
+
+```bash
+my-app/
+├── Chart.yaml
+├── values.yaml
+└── templates/
+    ├── deployment.yaml
+    ├── service.yaml
+    └── ingress.yaml
+```
+
+> You can use `helm create my-app` to scaffold this structure quickly.
+
+### 1.2 Deploy via ArgoCD
+
+**Create an ArgoCD Application YAML:**
+
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: helm-app
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: 'https://github.com/<your-username>/my-app.git'
+    targetRevision: HEAD
+    path: .
+    helm:
+      valueFiles:
+        - values.yaml
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: helm-namespace
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+```
+
+### 1.3 Apply It
+
+```bash
+kubectl apply -f helm-app.yaml -n argocd
+```
+
+---
+
+## **STEP 2: Use Kustomize with ArgoCD**
+
+### 2.1 Prepare Kustomize Repo
+
+**Structure:**
+
+```bash
+my-app/
+├── base/
+│   ├── deployment.yaml
+│   ├── service.yaml
+│   └── kustomization.yaml
+└── overlays/
+    ├── dev/
+    │   ├── patch.yaml
+    │   └── kustomization.yaml
+    └── prod/
+        ├── patch.yaml
+        └── kustomization.yaml
+```
+
+**Each `kustomization.yaml`** should look like:
+
+```yaml
+resources:
+  - ../../base
+patchesStrategicMerge:
+  - patch.yaml
+```
+
+### 2.2 Create ArgoCD Application for Overlay
+
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kustomize-app
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: 'https://github.com/<your-username>/my-app.git'
+    targetRevision: HEAD
+    path: overlays/dev
+    kustomize:
+      namePrefix: dev-
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: dev-namespace
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+```
+
+### 2.3 Apply It
+
+```bash
+kubectl apply -f kustomize-app.yaml -n argocd
+```
+
+---
+
+## **STEP 3: Secrets Management**
+
+### 3.1 Kubernetes Secrets
+
+```bash
+kubectl create secret generic my-secret --from-literal=password=mypassword
+```
+
+**Use it in Pod:**
+
+```yaml
+env:
+- name: PASSWORD
+  valueFrom:
+    secretKeyRef:
+      name: my-secret
+      key: password
+```
+
+### 3.2 External Secret Manager (Vault Example)
+
+* Setup **HashiCorp Vault**
+* Store secrets in Vault
+* Use **ArgoCD Vault Plugin**: [https://github.com/argoproj-labs/argocd-vault-plugin](https://github.com/argoproj-labs/argocd-vault-plugin)
+
+**Example usage in Deployment YAML:**
+
+```yaml
+env:
+- name: DB_PASSWORD
+  value: <path:secret/data/db#password>
+```
+
+> Plugin replaces it at runtime using Vault secret.
+
+---
+
+## **STEP 4: Resource Customization**
+
+### Example: Ignore Annotation Differences in Ingress
+
+```yaml
+resource.exclusions:
+- kind: Ingress
+  jsonPointers:
+    - /metadata/annotations
+```
+
+### Example: Custom Health Check
+
+```yaml
+resource.customizations:
+  custom.io/MyResource:
+    health.lua: |
+      hs = {}
+      if obj.status ~= nil then
+        if obj.status.condition == "Healthy" then
+          hs.status = "Healthy"
+          hs.message = obj.status.message
+        else
+          hs.status = "Degraded"
+          hs.message = obj.status.message
+        end
+      end
+      return hs
+```
+
+---
+
+## **STEP 5: Sync Policies**
+
+### Automated Sync with Self-Healing & Pruning
+
+```yaml
+syncPolicy:
+  automated:
+    prune: true
+    selfHeal: true
+```
+
+> Automatically applies new changes and cleans up deleted resources.
+
+---
+
+## **WHAT TO SUBMIT**
+
+### 1. GitHub Repository
+
+Include:
+
+* `helm/` chart folder
+* `kustomize/` with `base/` and `overlays/`
+* ArgoCD YAML definitions (`helm-app.yaml`, `kustomize-app.yaml`)
+* Example `secret.yaml` or reference to Vault integration
+
+### 2. `README.md`
+
+Include:
+
+* Project Overview
+* Tools Used: Helm, Kustomize, ArgoCD, Vault
+* Folder structure
+* Steps taken
+* Challenges faced
+* Screenshots of ArgoCD UI (optional)
+
+---
+
+## Do You Want Help Creating:
+
+* A sample `README.md`?
+* Pre-written YAMLs?
+* GitHub repo structure?
+
+Just let me know, and I’ll generate them for you.
