@@ -1,0 +1,146 @@
+Great, Olamide! Here's a **complete step-by-step guide for Module 2 – GitOps Application Deployment using ArgoCD**, including definitions, deployment, lifecycle management, and repo structuring.
+
+---
+
+## **Mini Project: GitOps Application Deployment Using ArgoCD**
+
+---
+
+### ✅ **Objective**
+
+To define, deploy, and manage a Kubernetes application using **ArgoCD** via GitOps workflow, and structure a Git repository for multi-environment use.
+
+---
+
+## **STEP 1: Define an Application in ArgoCD**
+
+### 🧾 Create `app-definition.yaml`
+
+Create a YAML file to declaratively define your application.
+
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: sample-app
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: 'https://github.com/<your-username>/sample-app.git'
+    path: k8s/dev        # change as needed
+    targetRevision: HEAD
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: sample-namespace
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+```
+
+> Replace `<your-username>` and paths with your actual repo and folder structure.
+
+---
+
+## **STEP 2: Deploy the Application**
+
+### Run this in your terminal:
+
+```bash
+kubectl apply -f app-definition.yaml -n argocd
+```
+
+> This will register your app with ArgoCD. You’ll see it appear in the ArgoCD UI under “Applications.”
+
+---
+
+## **STEP 3: Sync the Application**
+
+### Using ArgoCD CLI:
+
+```bash
+argocd app sync sample-app
+```
+
+### Or via UI:
+
+* Go to ArgoCD Dashboard: [http://localhost:8080](http://localhost:8080)
+* Click on `sample-app`
+* Click “Sync” and confirm
+
+---
+
+## **STEP 4: Monitor Application Health**
+
+### CLI:
+
+```bash
+argocd app get sample-app
+```
+
+> This shows the sync status (Synced/OutOfSync) and health (Healthy/Degraded).
+
+---
+
+## **STEP 5: Perform a Rollback (if needed)**
+
+If you want to revert to the previous version:
+
+```bash
+argocd app rollback sample-app
+```
+
+> Use this after a bad change or deployment failure.
+
+---
+
+## **STEP 6: Structure Your Git Repository**
+
+### Recommended Structure:
+
+```
+sample-app/
+├── README.md
+├── src/                # source code (optional)
+├── k8s/
+│   ├── dev/
+│   │   └── deployment.yaml
+│   ├── prod/
+│   │   └── deployment.yaml
+```
+
+> Separate environments allow independent deployments with ArgoCD.
+
+---
+
+### Version Control Best Practices:
+
+* Use clear, meaningful commit messages
+* Tag versions for releases
+* Protect `main`/`prod` branches
+
+---
+
+## **DELIVERABLES TO SUBMIT**
+
+1. **GitHub Repo Link**:
+
+   * With proper structure: `/k8s/dev`, `/k8s/prod`
+   * Include `app-definition.yaml`
+
+2. **README.md**:
+
+   * Project description
+   * Steps taken
+   * Screenshots (if possible)
+   * Challenges and learnings
+
+3. **Screenshots** (Optional but recommended):
+
+   * ArgoCD UI showing app
+   * `kubectl apply` output
+   * Sync/Rollback operations
+
+---
+
